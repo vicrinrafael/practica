@@ -22,3 +22,4 @@ class Sesion(models.Model):
     asientos= fields.Integer(string='Asientos')
     instructor_id=fields.Many2one('res.partner',string='Instructor')
     curso_id= fields.Many2one('rnet.curso', ondelete='cascade', string='Curso', required=True)
+    asistentes_ids= fields.Many2many('res.partner', 'partner_sesion_rel', 'sesion_id', 'partner_id',string='Asistentes')

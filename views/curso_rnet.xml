@@ -46,7 +46,7 @@
                 <group col='4' colspan='4'>
                   <field name='sesion_ids' nolabel='1'/>
                 </group>
-              </page>    
+              </page>
             </notebook>
           </sheet>
         </form>
@@ -109,7 +109,7 @@
             <notebook>
               <page string="Alumnos">
                 <group>
-
+                  <field name='asistentes_ids'/>
                 </group>
               </page>
             </notebook>
