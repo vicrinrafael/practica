@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from odoo import models, fields, api,exceptions
+from datetime import timedelta
+
 
 class Curso(models.Model):
     _name='rnet.curso'
@@ -27,7 +29,7 @@ class Sesion(models.Model):
     _name='rnet.sesion'
 
     name= fields.Char(string='Nombre', required=True, default='/')
-    inicio= fields.Date(default=lambda self:fields.Date.today())
+    inicio= fields.Datetime(default=lambda self:fields.Datetime.now())
     duracion= fields.Float(string='Duracion', digits=(6,2), help='Duracion en días')
     asientos= fields.Integer(string='Asientos')
     instructor_id=fields.Many2one('res.partner',string='Instructor',
@@ -35,6 +37,40 @@ class Sesion(models.Model):
     curso_id= fields.Many2one('rnet.curso', ondelete='cascade', string='Curso', required=True)
     asistentes_ids= fields.Many2many('res.partner', 'partner_sesion_rel', 'sesion_id', 'partner_id',string='Asistentes')
     asientosReservados=fields.Float(string='Asientos Reservados', compute='_asientosReservados')
+    fin=fields.Datetime(string='fin', store=True,
+    compute='_getFin', inverse='_setFin')
+
+# Flujos de trabajo en que estado se encuentra la sesion
+
+    state = fields.Selection([
+    ('borrador', "Borrador"),
+    ('confirmado',"Confirmado"),
+    ('realizado',"Realizado"),
+    ('cancelado',"Cancelado"),
+    ], string='Estado',copy=False, default='borrador')
+
+    @api.multi
+    def action_borrador(self):
+        for x in self:
+            x.state = 'borrador'
+
+    @api.multi
+    def action_confirmado(self):
+        for x in self:
+            x.state = 'confirmado'
+
+    @api.multi
+    def action_realizado(self):
+        for x in self:
+            x.state = 'realizado'
+
+    @api.multi
+    def action_cancelado(self):
+        for x in self:
+            x.state = 'cancelado'
+
+
+
 
 
     @api.depends('asientos', 'asistentes_ids')
@@ -63,6 +99,28 @@ class Sesion(models.Model):
                 'Reasigne a los Reservantes'
                 },
             }
+
+    @api.depends('inicio', 'duracion')
+    def _getFin(self):
+        for record in self:
+            if not (record.inicio and record.duracion):
+                record.fin=record.inicio
+                continue
+            inicio=fields.Datetime.from_string(record.inicio)
+            duracion=timedelta(days=(record.duracion - 1))
+            record.fin=inicio + duracion
+
+    def _setFin(self):
+        for record in self:
+            if not (record.inicio and record.fin):
+                continue
+            inicio=fields.Datetime.from_string(record.inicio)
+            fin=fields.Datetime.from_string(record.fin)
+            record.duracion=(fin - inicio).days + 1
+
+
+
+
     @api.constrains('instructor_id', 'asistentes_ids')
     def _check_instructor_not_in_attendees(self):
         for record in self:
